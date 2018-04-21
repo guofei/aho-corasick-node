@@ -8,27 +8,27 @@ const _ = require('lodash');
 const longtext = 'abcdecxxxxefghbテスト。bb';
 const keywords = ['ab', 'テスト', 'efgh', 'bc', 'c', 'ac', 'adeg', 'abcdefg'];
 
-const calcShiftVolume = (da, index, children) => {
-  let shiftVolume = 1;
-  if (index - children[0].code > shiftVolume) {
-    shiftVolume = (index - children[0].code) + 1;
+const calcBase = (da, index, children) => {
+  let base = 1;
+  if (index - children[0].code > base) {
+    base = (index - children[0].code) + 1;
   }
   for (;;) {
     let used = false;
     for (let i = 0; i < children.length; i++) {
-      const nextState = shiftVolume + children[i].code;
+      const nextState = base + children[i].code;
       if (da.check[nextState]) {
         used = true;
         break;
       }
     }
     if (used) {
-      shiftVolume += 1;
+      base += 1;
     } else {
       break;
     }
   }
-  return shiftVolume;
+  return base;
 };
 
 const searchChildren = (state, code) => state.children.filter(s => s.code === code)[0];
@@ -90,7 +90,7 @@ const buildDoubleArray2 = (currentIndex, baseTrie, doubleArray) => {
   if (_.isEmpty(baseTrie.children)) {
     return;
   }
-  const v = calcShiftVolume(doubleArray, currentIndex, baseTrie.children);
+  const v = calcBase(doubleArray, currentIndex, baseTrie.children);
   if (baseTrie.pattern) {
     doubleArray.base[currentIndex] = -v;
   } else {
@@ -116,7 +116,7 @@ const buildDoubleArray = (rootIndex, baseTrie, doubleArray) => {
       doubleArray.codemap[index] = state.code;
     }
     if (!_.isEmpty(state.children)) {
-      const v = calcShiftVolume(doubleArray, index, state.children);
+      const v = calcBase(doubleArray, index, state.children);
       if (state.pattern) {
         doubleArray.base[index] = -v;
       } else {
@@ -145,7 +145,7 @@ const findFailureLink = (currentState, code) => {
 };
 
 // BFS
-const builAC = (baseTrie, ac) => {
+const buildAC = (baseTrie, ac) => {
   const queue = [];
   _.forEach(baseTrie.children, (child) => {
     child.failurelink = baseTrie;
@@ -176,7 +176,7 @@ const builAC = (baseTrie, ac) => {
   }
 };
 
-const getShiftVolume = (ac, index) => {
+const getBase = (ac, index) => {
   const v = ac.base[index];
   if (v < 0) {
     return -v;
@@ -185,7 +185,7 @@ const getShiftVolume = (ac, index) => {
 };
 
 const getNextIndex = (ac, currentIndex, code) => {
-  const nextIndex = getShiftVolume(ac, currentIndex) + code;
+  const nextIndex = getBase(ac, currentIndex) + code;
   if (ac.check[nextIndex] === currentIndex) {
     return nextIndex;
   }
@@ -241,7 +241,7 @@ const baseTrie = buildBaseTrie(keys);
 // debugTrie(baseTrie);
 const ac = initAC();
 buildDoubleArray(1, baseTrie, ac);
-builAC(baseTrie, ac);
+buildAC(baseTrie, ac);
 debugTrie(baseTrie);
 search(ac, longtext);
 
