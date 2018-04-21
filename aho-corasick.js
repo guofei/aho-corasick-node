@@ -8,13 +8,20 @@ const _ = require('lodash');
 const longtext = 'abcdecxxxxefghbテスト。bb';
 const keywords = ['ab', 'テスト', 'efgh', 'bc', 'c', 'ac', 'adeg', 'abcdefg'];
 
-const calcShiftVolume = (da, children) => {
+const calcShiftVolume = (da, index, children) => {
   let shiftVolume = 1;
+  if (index - children[0].code > shiftVolume) {
+    shiftVolume = (index - children[0].code) + 1;
+  }
   for (;;) {
-    const used = _.some(children, (child) => {
-      const nextState = shiftVolume + child.code;
-      return da.check[nextState];
-    });
+    let used = false;
+    for (let i = 0; i < children.length; i++) {
+      const nextState = shiftVolume + children[i].code;
+      if (da.check[nextState]) {
+        used = true;
+        break;
+      }
+    }
     if (used) {
       shiftVolume += 1;
     } else {
@@ -75,7 +82,7 @@ const initAC = () => ({
 });
 
 // DFS
-const buildDoubleArray = (currentIndex, baseTrie, doubleArray) => {
+const buildDoubleArray2 = (currentIndex, baseTrie, doubleArray) => {
   baseTrie.index = currentIndex;
   if (baseTrie.code) {
     doubleArray.codemap[currentIndex] = baseTrie.code;
@@ -83,7 +90,7 @@ const buildDoubleArray = (currentIndex, baseTrie, doubleArray) => {
   if (_.isEmpty(baseTrie.children)) {
     return;
   }
-  const v = calcShiftVolume(doubleArray, baseTrie.children);
+  const v = calcShiftVolume(doubleArray, currentIndex, baseTrie.children);
   if (baseTrie.pattern) {
     doubleArray.base[currentIndex] = -v;
   } else {
@@ -98,6 +105,31 @@ const buildDoubleArray = (currentIndex, baseTrie, doubleArray) => {
     const nextState = v + child.code;
     buildDoubleArray(nextState, child, doubleArray);
   });
+};
+
+const buildDoubleArray = (rootIndex, baseTrie, doubleArray) => {
+  const stack = [{ state: baseTrie, index: rootIndex }];
+  while (!_.isEmpty(stack)) {
+    const { state, index } = stack.pop();
+    state.index = index;
+    if (state.code) {
+      doubleArray.codemap[index] = state.code;
+    }
+    if (!_.isEmpty(state.children)) {
+      const v = calcShiftVolume(doubleArray, index, state.children);
+      if (state.pattern) {
+        doubleArray.base[index] = -v;
+      } else {
+        doubleArray.base[index] = v;
+      }
+      // set check
+      _.forEach(state.children, (child) => {
+        const nextState = v + child.code;
+        doubleArray.check[nextState] = index;
+        stack.push({ state: child, index: nextState });
+      });
+    }
+  }
 };
 
 const findFailureLink = (currentState, code) => {
