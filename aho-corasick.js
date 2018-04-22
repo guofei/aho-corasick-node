@@ -189,6 +189,13 @@ const getNextIndex = (ac, currentIndex, code) => {
   if (ac.check[nextIndex] === currentIndex) {
     return nextIndex;
   }
+  if (!nextIndex) {
+    const rootIndex = 1;
+    const nextIndexAfterRoot = getBase(ac, rootIndex) + code;
+    if (ac.check[nextIndexAfterRoot] === rootIndex) {
+      return nextIndexAfterRoot;
+    }
+  }
   if (currentIndex === 1) {
     return 1;
   }
