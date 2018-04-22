@@ -82,31 +82,6 @@ const initAC = () => ({
 });
 
 // DFS
-const buildDoubleArray2 = (currentIndex, baseTrie, doubleArray) => {
-  baseTrie.index = currentIndex;
-  if (baseTrie.code) {
-    doubleArray.codemap[currentIndex] = baseTrie.code;
-  }
-  if (_.isEmpty(baseTrie.children)) {
-    return;
-  }
-  const v = calcBase(doubleArray, currentIndex, baseTrie.children);
-  if (baseTrie.pattern) {
-    doubleArray.base[currentIndex] = -v;
-  } else {
-    doubleArray.base[currentIndex] = v;
-  }
-  // set check
-  _.forEach(baseTrie.children, (child) => {
-    const nextState = v + child.code;
-    doubleArray.check[nextState] = currentIndex;
-  });
-  _.forEach(baseTrie.children, (child) => {
-    const nextState = v + child.code;
-    buildDoubleArray(nextState, child, doubleArray);
-  });
-};
-
 const buildDoubleArray = (rootIndex, baseTrie, doubleArray) => {
   const stack = [{ state: baseTrie, index: rootIndex }];
   while (!_.isEmpty(stack)) {
@@ -185,21 +160,23 @@ const getBase = (ac, index) => {
 };
 
 const getNextIndex = (ac, currentIndex, code) => {
+  const rootIndex = 1;
   const nextIndex = getBase(ac, currentIndex) + code;
-  if (ac.check[nextIndex] === currentIndex) {
+  if (nextIndex && ac.check[nextIndex] === currentIndex) {
     return nextIndex;
   }
-  if (!nextIndex) {
-    const rootIndex = 1;
-    const nextIndexAfterRoot = getBase(ac, rootIndex) + code;
-    if (ac.check[nextIndexAfterRoot] === rootIndex) {
-      return nextIndexAfterRoot;
-    }
-  }
   if (currentIndex === 1) {
-    return 1;
+    return rootIndex;
   }
-  return ac.failurelink[currentIndex];
+  let failure = ac.failurelink[currentIndex];
+  if (!failure || !getBase(ac, failure)) {
+    failure = rootIndex;
+  }
+  const failureNext = getBase(ac, failure) + code;
+  if (failureNext && ac.check[failureNext] === failure) {
+    return failureNext;
+  }
+  return failure;
 };
 
 const getPattern = (ac, index) => {
@@ -223,6 +200,7 @@ const getOutputs = (ac, index) => {
 };
 
 const search = (ac, text) => {
+  const result = [];
   const codes = bytebuffer.fromUTF8(text).toBuffer();
   let currentIndex = 1;
   _.forEach(codes, (code) => {
@@ -230,16 +208,17 @@ const search = (ac, text) => {
     if (ac.base[nextIndex] < 0 || !ac.base[nextIndex]) {
       const pattern = Int8Array.from(getPattern(ac, nextIndex));
       const b = bytebuffer.wrap(pattern.buffer);
-      console.log(b.toUTF8());
+      result.push(b.toUTF8());
     }
     const outputs = getOutputs(ac, nextIndex);
     _.forEach(outputs, (output) => {
       const pattern = Int8Array.from(output);
       const b = bytebuffer.wrap(pattern.buffer);
-      console.log(b.toUTF8());
+      result.push(b.toUTF8());
     });
     currentIndex = nextIndex;
   });
+  return _.uniq(result).sort();
 };
 
 const keys = keywords.map(k => bytebuffer.fromUTF8(k).toBuffer()).sort();
@@ -249,7 +228,7 @@ const baseTrie = buildBaseTrie(keys);
 const ac = initAC();
 buildDoubleArray(1, baseTrie, ac);
 buildAC(baseTrie, ac);
-debugTrie(baseTrie);
+// debugTrie(baseTrie);
 search(ac, longtext);
 
 // console.log(ac);
