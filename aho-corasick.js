@@ -5,8 +5,7 @@ const _ = require('lodash');
 // base[current] + code = next
 // check[next] = current
 
-const longtext = 'abcdecxxxxefghbテスト。bb';
-const keywords = ['ab', 'テスト', 'efgh', 'bc', 'c', 'ac', 'adeg', 'abcdefg'];
+const ROOT_INDEX = 1;
 
 const calcBase = (da, index, children) => {
   let base = 1;
@@ -32,23 +31,6 @@ const calcBase = (da, index, children) => {
 };
 
 const searchChildren = (state, code) => state.children.filter(s => s.code === code)[0];
-
-const debugTrie = (baseTrie, s = '') => {
-  const children = baseTrie.children;
-  baseTrie.children = _.map(baseTrie.children, c => c.code);
-  let link = baseTrie.failurelink;
-  if (!link) {
-    link = { index: 0 };
-  }
-  let output = baseTrie.output;
-  if (!output) {
-    output = { index: 0 };
-  }
-  console.log(s, { index: baseTrie.index, code: String.fromCharCode(baseTrie.code), output: output.index, link: link.index, p: baseTrie.pattern });
-  _.forEach(children, (child) => {
-    debugTrie(child, s + '    |');
-  });
-};
 
 const isRoot = baseTrie => !baseTrie.code;
 
@@ -80,6 +62,60 @@ const initAC = () => ({
   output: [],
   codemap: [],
 });
+
+const arrayToInt32Array = (arr) => {
+  const int32Array = new Int32Array(arr.length);
+  _.forEach(arr, (v, i) => {
+    int32Array[i] = v;
+  });
+  return int32Array;
+};
+
+const int32ArrayToHex = (int32Array) => {
+  const b = bytebuffer.wrap(int32Array.buffer);
+  return b.toHex();
+};
+
+const hexToInt32Array = (hex) => {
+  const b = bytebuffer.fromHex(hex);
+  return new Int32Array(b.toArrayBuffer());
+};
+
+const compactAC = (ac) => {
+  return {
+    base: arrayToInt32Array(ac.base),
+    check: arrayToInt32Array(ac.check),
+    failurelink: arrayToInt32Array(ac.failurelink),
+    output: arrayToInt32Array(ac.output),
+    codemap: arrayToInt32Array(ac.codemap),
+  };
+};
+
+const exportAC = (ac) => {
+  return {
+    base: int32ArrayToHex(ac.base),
+    check: int32ArrayToHex(ac.check),
+    failurelink: int32ArrayToHex(ac.failurelink),
+    output: int32ArrayToHex(ac.output),
+    codemap: int32ArrayToHex(ac.codemap),
+  };
+};
+
+const importAC = ({
+  base,
+  check,
+  failurelink,
+  output,
+  codemap,
+}) => {
+  return {
+    base: hexToInt32Array(base),
+    check: hexToInt32Array(check),
+    failurelink: hexToInt32Array(failurelink),
+    output: hexToInt32Array(output),
+    codemap: hexToInt32Array(codemap),
+  };
+};
 
 // DFS
 const buildDoubleArray = (rootIndex, baseTrie, doubleArray) => {
@@ -160,17 +196,16 @@ const getBase = (ac, index) => {
 };
 
 const getNextIndex = (ac, currentIndex, code) => {
-  const rootIndex = 1;
   const nextIndex = getBase(ac, currentIndex) + code;
   if (nextIndex && ac.check[nextIndex] === currentIndex) {
     return nextIndex;
   }
-  if (currentIndex === 1) {
-    return rootIndex;
+  if (currentIndex === ROOT_INDEX) {
+    return ROOT_INDEX;
   }
   let failure = ac.failurelink[currentIndex];
   if (!failure || !getBase(ac, failure)) {
-    failure = rootIndex;
+    failure = ROOT_INDEX;
   }
   const failureNext = getBase(ac, failure) + code;
   if (failureNext && ac.check[failureNext] === failure) {
@@ -180,8 +215,7 @@ const getNextIndex = (ac, currentIndex, code) => {
 };
 
 const getPattern = (ac, index) => {
-  const root = 1;
-  if (index <= root) {
+  if (index <= ROOT_INDEX) {
     return [];
   }
   const code = ac.codemap[index];
@@ -202,7 +236,7 @@ const getOutputs = (ac, index) => {
 const search = (ac, text) => {
   const result = [];
   const codes = bytebuffer.fromUTF8(text).toBuffer();
-  let currentIndex = 1;
+  let currentIndex = ROOT_INDEX;
   _.forEach(codes, (code) => {
     const nextIndex = getNextIndex(ac, currentIndex, code);
     if (ac.base[nextIndex] < 0 || !ac.base[nextIndex]) {
@@ -221,15 +255,54 @@ const search = (ac, text) => {
   return _.uniq(result).sort();
 };
 
-const keys = keywords.map(k => bytebuffer.fromUTF8(k).toBuffer()).sort();
-// console.log(_.map(keys, k => Int32Array.from(k)));
-const baseTrie = buildBaseTrie(keys);
-// debugTrie(baseTrie);
-const ac = initAC();
-buildDoubleArray(1, baseTrie, ac);
-buildAC(baseTrie, ac);
-// debugTrie(baseTrie);
-search(ac, longtext);
+class AhoCorasick {
+  constructor() {
+    this.words = [];
+    this.data = initAC();
+  }
 
-// console.log(ac);
-// debugTrie(baseTrie);
+  add(word) {
+    this.words.push(word);
+  }
+
+  build() {
+    const keys = this.words.map(k => bytebuffer.fromUTF8(k).toBuffer()).sort();
+    const baseTrie = buildBaseTrie(keys);
+    const ac = initAC();
+    buildDoubleArray(ROOT_INDEX, baseTrie, ac);
+    buildAC(baseTrie, ac);
+    this.data = compactAC(ac);
+  }
+
+  search(text) {
+    return search(this.data, text);
+  }
+
+  export() {
+    return exportAC(this.data);
+  }
+
+  static from(buffers) {
+    const ac = new AhoCorasick();
+    ac.data = importAC(buffers);
+    return ac;
+  }
+}
+
+// const ac = new AhoCorasick();
+// ac.add('ab');
+// ac.add('テスト');
+// ac.add('efgh');
+// ac.add('bc');
+// ac.add('c');
+// ac.build();
+// // const result = ac.search(longtext);
+
+// const buf = ac.export();
+// console.log(buf);
+// const ac2 = AhoCorasick.from(buf);
+// const longtext = 'abcdecxxxxefghbテスト。bb';
+// const result = ac2.search(longtext);
+// console.log(result);
+
+module.exports = AhoCorasick;
