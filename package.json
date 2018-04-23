@@ -1,0 +1,19 @@
+{
+  "name": "aho_corasick_node",
+  "version": "1.0.0",
+  "description": "",
+  "main": "aho-corasick.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "guofei",
+  "license": "MIT",
+  "dependencies": {
+    "bytebuffer": "^5.0.1",
+    "lodash": "^4.17.5"
+  },
+  "devDependencies": {
+    "eslint-config-airbnb-base": "^12.1.0",
+    "eslint-plugin-import": "^2.10.0"
+  }
+}
