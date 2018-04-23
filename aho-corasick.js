@@ -7,6 +7,14 @@ const _ = require('lodash');
 
 const ROOT_INDEX = 1;
 
+const initAC = () => ({
+  base: [],
+  check: [],
+  failurelink: [],
+  output: [],
+  codemap: [],
+});
+
 const calcBase = (da, index, children) => {
   let base = 1;
   if (index - children[0].code > base) {
@@ -53,68 +61,6 @@ const buildBaseTrie = (sortedKeys) => {
     });
   });
   return root;
-};
-
-const initAC = () => ({
-  base: [],
-  check: [],
-  failurelink: [],
-  output: [],
-  codemap: [],
-});
-
-const arrayToInt32Array = (arr) => {
-  const int32Array = new Int32Array(arr.length);
-  _.forEach(arr, (v, i) => {
-    int32Array[i] = v;
-  });
-  return int32Array;
-};
-
-const int32ArrayToHex = (int32Array) => {
-  const b = bytebuffer.wrap(int32Array.buffer);
-  return b.toHex();
-};
-
-const hexToInt32Array = (hex) => {
-  const b = bytebuffer.fromHex(hex);
-  return new Int32Array(b.toArrayBuffer());
-};
-
-const compactAC = (ac) => {
-  return {
-    base: arrayToInt32Array(ac.base),
-    check: arrayToInt32Array(ac.check),
-    failurelink: arrayToInt32Array(ac.failurelink),
-    output: arrayToInt32Array(ac.output),
-    codemap: arrayToInt32Array(ac.codemap),
-  };
-};
-
-const exportAC = (ac) => {
-  return {
-    base: int32ArrayToHex(ac.base),
-    check: int32ArrayToHex(ac.check),
-    failurelink: int32ArrayToHex(ac.failurelink),
-    output: int32ArrayToHex(ac.output),
-    codemap: int32ArrayToHex(ac.codemap),
-  };
-};
-
-const importAC = ({
-  base,
-  check,
-  failurelink,
-  output,
-  codemap,
-}) => {
-  return {
-    base: hexToInt32Array(base),
-    check: hexToInt32Array(check),
-    failurelink: hexToInt32Array(failurelink),
-    output: hexToInt32Array(output),
-    codemap: hexToInt32Array(codemap),
-  };
 };
 
 // DFS
@@ -195,14 +141,7 @@ const getBase = (ac, index) => {
   return v;
 };
 
-const getNextIndex = (ac, currentIndex, code) => {
-  const nextIndex = getBase(ac, currentIndex) + code;
-  if (nextIndex && ac.check[nextIndex] === currentIndex) {
-    return nextIndex;
-  }
-  if (currentIndex === ROOT_INDEX) {
-    return ROOT_INDEX;
-  }
+const getNextIndexByFalure = (ac, currentIndex, code) => {
   let failure = ac.failurelink[currentIndex];
   if (!failure || !getBase(ac, failure)) {
     failure = ROOT_INDEX;
@@ -211,7 +150,18 @@ const getNextIndex = (ac, currentIndex, code) => {
   if (failureNext && ac.check[failureNext] === failure) {
     return failureNext;
   }
-  return failure;
+  if (currentIndex === ROOT_INDEX) {
+    return ROOT_INDEX;
+  }
+  return getNextIndexByFalure(ac, failure, code);
+};
+
+const getNextIndex = (ac, currentIndex, code) => {
+  const nextIndex = getBase(ac, currentIndex) + code;
+  if (nextIndex && ac.check[nextIndex] === currentIndex) {
+    return nextIndex;
+  }
+  return getNextIndexByFalure(ac, currentIndex, code);
 };
 
 const getPattern = (ac, index) => {
@@ -255,6 +205,61 @@ const search = (ac, text) => {
   return _.uniq(result).sort();
 };
 
+const arrayToInt32Array = (arr) => {
+  const int32Array = new Int32Array(arr.length);
+  _.forEach(arr, (v, i) => {
+    int32Array[i] = v;
+  });
+  return int32Array;
+};
+
+const int32ArrayToHex = (int32Array) => {
+  const b = bytebuffer.wrap(int32Array.buffer);
+  return b.toHex();
+};
+
+const hexToInt32Array = (hex) => {
+  const b = bytebuffer.fromHex(hex);
+  return new Int32Array(b.toArrayBuffer());
+};
+
+const compactAC = (ac) => {
+  return {
+    base: arrayToInt32Array(ac.base),
+    check: arrayToInt32Array(ac.check),
+    failurelink: arrayToInt32Array(ac.failurelink),
+    output: arrayToInt32Array(ac.output),
+    codemap: arrayToInt32Array(ac.codemap),
+  };
+};
+
+const exportAC = (ac) => {
+  return {
+    base: int32ArrayToHex(ac.base),
+    check: int32ArrayToHex(ac.check),
+    failurelink: int32ArrayToHex(ac.failurelink),
+    output: int32ArrayToHex(ac.output),
+    codemap: int32ArrayToHex(ac.codemap),
+  };
+};
+
+const importAC = ({
+  base,
+  check,
+  failurelink,
+  output,
+  codemap,
+}) => {
+  return {
+    base: hexToInt32Array(base),
+    check: hexToInt32Array(check),
+    failurelink: hexToInt32Array(failurelink),
+    output: hexToInt32Array(output),
+    codemap: hexToInt32Array(codemap),
+  };
+};
+
+
 class AhoCorasick {
   constructor() {
     this.words = [];
@@ -288,21 +293,5 @@ class AhoCorasick {
     return ac;
   }
 }
-
-// const ac = new AhoCorasick();
-// ac.add('ab');
-// ac.add('テスト');
-// ac.add('efgh');
-// ac.add('bc');
-// ac.add('c');
-// ac.build();
-// // const result = ac.search(longtext);
-
-// const buf = ac.export();
-// console.log(buf);
-// const ac2 = AhoCorasick.from(buf);
-// const longtext = 'abcdecxxxxefghbテスト。bb';
-// const result = ac2.search(longtext);
-// console.log(result);
 
 module.exports = AhoCorasick;
