@@ -223,25 +223,21 @@ const hexToInt32Array = (hex) => {
   return new Int32Array(b.toArrayBuffer());
 };
 
-const compactAC = (ac) => {
-  return {
-    base: arrayToInt32Array(ac.base),
-    check: arrayToInt32Array(ac.check),
-    failurelink: arrayToInt32Array(ac.failurelink),
-    output: arrayToInt32Array(ac.output),
-    codemap: arrayToInt32Array(ac.codemap),
-  };
-};
+const compactAC = ac => ({
+  base: arrayToInt32Array(ac.base),
+  check: arrayToInt32Array(ac.check),
+  failurelink: arrayToInt32Array(ac.failurelink),
+  output: arrayToInt32Array(ac.output),
+  codemap: arrayToInt32Array(ac.codemap),
+});
 
-const exportAC = (ac) => {
-  return {
-    base: int32ArrayToHex(ac.base),
-    check: int32ArrayToHex(ac.check),
-    failurelink: int32ArrayToHex(ac.failurelink),
-    output: int32ArrayToHex(ac.output),
-    codemap: int32ArrayToHex(ac.codemap),
-  };
-};
+const exportAC = ac => ({
+  base: int32ArrayToHex(ac.base),
+  check: int32ArrayToHex(ac.check),
+  failurelink: int32ArrayToHex(ac.failurelink),
+  output: int32ArrayToHex(ac.output),
+  codemap: int32ArrayToHex(ac.codemap),
+});
 
 const importAC = ({
   base,
@@ -249,15 +245,13 @@ const importAC = ({
   failurelink,
   output,
   codemap,
-}) => {
-  return {
-    base: hexToInt32Array(base),
-    check: hexToInt32Array(check),
-    failurelink: hexToInt32Array(failurelink),
-    output: hexToInt32Array(output),
-    codemap: hexToInt32Array(codemap),
-  };
-};
+}) => ({
+  base: hexToInt32Array(base),
+  check: hexToInt32Array(check),
+  failurelink: hexToInt32Array(failurelink),
+  output: hexToInt32Array(output),
+  codemap: hexToInt32Array(codemap),
+});
 
 
 class AhoCorasick {
@@ -279,7 +273,7 @@ class AhoCorasick {
     this.data = compactAC(ac);
   }
 
-  search(text) {
+  match(text) {
     return search(this.data, text);
   }
 
