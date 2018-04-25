@@ -1,7 +1,7 @@
 aho-corasick-node
 ====
 
-A Node implementation of the Aho-Corasick string matching algorithm based on DoubleArray.
+A Node implementation of the Aho-Corasick string matching algorithm based on DoubleArray Trie.
 
 ## Install
 
@@ -18,9 +18,13 @@ const AhoCorasick = require('aho-corasick-node');
 
 const keywords = ['b', 'ba', 'nan', 'ab'];
 const text = 'banana';
+
+// build AhoCorasick
 const builder = AhoCorasick.builder();
 keywords.forEach(k => builder.add(k));
 const ac = builder.build();
+
+// match
 const hits = ac.match(text); // ['b', 'ba', 'nan']
 ```
 
@@ -37,7 +41,7 @@ keywords.forEach(k => builder.add(k));
 const ac = builder.build();
 
 const buf = ac.export();
-// buf struct
+// buf:
 // {
 //   base: string...,
 //   check: string...,
