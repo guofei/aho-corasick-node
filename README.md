@@ -11,37 +11,28 @@ npm install aho-corasick-node --save
 
 ## Usage
 
+### Build
+```
+const AhoCorasick = require('aho-corasick-node');
+
+const keywords = ['b', 'ba', 'nan', 'ab'];
+const builder = AhoCorasick.builder();
+keywords.forEach(k => builder.add(k));
+const ac = builder.build();
+```
+
 ### Match
 
 ```
-const AhoCorasick = require('aho-corasick-node');
-
-const keywords = ['b', 'ba', 'nan', 'ab'];
 const text = 'banana';
-
-// build AhoCorasick
-const builder = AhoCorasick.builder();
-keywords.forEach(k => builder.add(k));
-const ac = builder.build();
-
-// match
 const hits = ac.match(text); // ['b', 'ba', 'nan']
 ```
 
-### Load
+### Export
 
 ```
-const AhoCorasick = require('aho-corasick-node');
-
-const keywords = ['b', 'ba', 'nan', 'ab'];
-const text = 'banana';
-
-const builder = AhoCorasick.builder();
-keywords.forEach(k => builder.add(k));
-const ac = builder.build();
-
 const buf = ac.export();
-// buf:
+// content of buf:
 // {
 //   base: string...,
 //   check: string...,
@@ -49,9 +40,13 @@ const buf = ac.export();
 //   output: string...,
 //   codemap: string...,
 // };
+```
 
-const loadedAc = AhoCorasick.from(buf);
-const hits = loadedAc.match(text); // ['b', 'ba', 'nan']
+### Load
+
+```
+const loadedAC = AhoCorasick.from(buf);
+const hits = loadedAC.match(text); // ['b', 'ba', 'nan']
 ```
 
 ## Licence
