@@ -3,6 +3,12 @@ aho-corasick-node
 
 A Node implementation of the Aho-Corasick string matching algorithm based on DoubleArray.
 
+## Install
+
+```
+npm install aho-corasick-node --save
+```
+
 ## Usage
 
 ### Match
@@ -12,9 +18,9 @@ const AhoCorasick = require('aho-corasick-node');
 
 const keywords = ['b', 'ba', 'nan', 'ab'];
 const text = 'banana';
-const ac = new AhoCorasick();
-keywords.forEach(k => ac.add(k));
-ac.build();
+const builder = AhoCorasick.builder();
+keywords.forEach(k => builder.add(k));
+const ac = builder.build();
 const hits = ac.match(text); // ['b', 'ba', 'nan']
 ```
 
@@ -26,9 +32,9 @@ const AhoCorasick = require('aho-corasick-node');
 const keywords = ['b', 'ba', 'nan', 'ab'];
 const text = 'banana';
 
-const ac = new AhoCorasick();
-keywords.forEach(k => ac.add(k));
-ac.build();
+const builder = AhoCorasick.builder();
+keywords.forEach(k => builder.add(k));
+const ac = builder.build();
 
 const buf = ac.export();
 // buf struct
@@ -40,14 +46,8 @@ const buf = ac.export();
 //   codemap: string...,
 // };
 
-const loadedAc = AhoCorasick.from(bufs);
+const loadedAc = AhoCorasick.from(buf);
 const hits = loadedAc.match(text); // ['b', 'ba', 'nan']
-```
-
-## Install
-
-```
-npm install aho-corasick-node --save
 ```
 
 ## Licence

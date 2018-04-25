@@ -5,12 +5,12 @@ describe('AhoCorasick', () => {
   let ac = null;
   before(() => {
     const keywords = ['b', 'ab', 'ba', 'nan'];
-    ac = new AhoCorasick();
-    keywords.forEach(k => ac.add(k));
-    ac.build();
+    const builder = AhoCorasick.builder();
+    keywords.forEach(k => builder.add(k));
+    ac = builder.build();
   });
 
-  describe('build()', () => {
+  describe('builder()', () => {
     it('should build AhoCorasick', () => {
       const expectedData = {
         base: Int32Array.from([0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, -3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 3]),
@@ -27,6 +27,11 @@ describe('AhoCorasick', () => {
     it('should match keywords', () => {
       const text = 'banana';
       assert.deepEqual(ac.match(text), ['b', 'ba', 'nan']);
+    });
+
+    it('should match empty keywords', () => {
+      const text = 'hello!';
+      assert.deepEqual(ac.match(text), []);
     });
   });
 });

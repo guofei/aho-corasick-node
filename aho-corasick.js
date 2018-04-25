@@ -183,6 +183,11 @@ const getOutputs = (ac, index) => {
   return [];
 };
 
+const convert = (codes) => {
+  const arr = Int8Array.from(codes);
+  return bytebuffer.wrap(arr.buffer).toUTF8();
+};
+
 const search = (ac, text) => {
   const result = [];
   const codes = bytebuffer.fromUTF8(text).toBuffer();
@@ -190,15 +195,11 @@ const search = (ac, text) => {
   _.forEach(codes, (code) => {
     const nextIndex = getNextIndex(ac, currentIndex, code);
     if (ac.base[nextIndex] < 0 || !ac.base[nextIndex]) {
-      const pattern = Int8Array.from(getPattern(ac, nextIndex));
-      const b = bytebuffer.wrap(pattern.buffer);
-      result.push(b.toUTF8());
+      result.push(convert(getPattern(ac, nextIndex)));
     }
     const outputs = getOutputs(ac, nextIndex);
     _.forEach(outputs, (output) => {
-      const pattern = Int8Array.from(output);
-      const b = bytebuffer.wrap(pattern.buffer);
-      result.push(b.toUTF8());
+      result.push(convert(output));
     });
     currentIndex = nextIndex;
   });
@@ -253,11 +254,9 @@ const importAC = ({
   codemap: hexToInt32Array(codemap),
 });
 
-
-class AhoCorasick {
+class Builder {
   constructor() {
     this.words = [];
-    this.data = initAC();
   }
 
   add(word) {
@@ -270,7 +269,13 @@ class AhoCorasick {
     const ac = initAC();
     buildDoubleArray(ROOT_INDEX, baseTrie, ac);
     buildAC(baseTrie, ac);
-    this.data = compactAC(ac);
+    return new AhoCorasick(compactAC(ac));
+  }
+}
+
+class AhoCorasick {
+  constructor(data) {
+    this.data = data;
   }
 
   match(text) {
@@ -285,6 +290,10 @@ class AhoCorasick {
     const ac = new AhoCorasick();
     ac.data = importAC(buffers);
     return ac;
+  }
+
+  static builder() {
+    return new Builder();
   }
 }
 
