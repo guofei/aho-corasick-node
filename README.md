@@ -32,13 +32,13 @@ const hits = ac.match(text); // ['b', 'ba', 'nan']
 
 ```
 const buf = ac.export();
-// content of buf:
+console.log(buf);
 // {
-//   base: string...,
-//   check: string...,
-//   failurelink: string...,
-//   output: string...,
-//   codemap: string...,
+//   base: 'string...',
+//   check: 'string...',
+//   failurelink: 'string...',
+//   output: 'string...',
+//   codemap: 'string...',
 // };
 ```
 
