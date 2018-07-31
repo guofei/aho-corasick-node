@@ -5,14 +5,14 @@ A Node implementation of the Aho-Corasick string matching algorithm based on Dou
 
 ## Install
 
-```
+```bash
 npm install aho-corasick-node --save
 ```
 
 ## Usage
 
 ### Build
-```
+```js
 const AhoCorasick = require('aho-corasick-node');
 
 const keywords = ['b', 'ba', 'nan', 'ab'];
@@ -23,14 +23,14 @@ const ac = builder.build();
 
 ### Match
 
-```
+```js
 const text = 'banana';
 const hits = ac.match(text); // ['b', 'ba', 'nan']
 ```
 
 ### Export
 
-```
+```js
 const buf = ac.export();
 console.log(buf);
 // {
@@ -44,7 +44,7 @@ console.log(buf);
 
 ### Load
 
-```
+```js
 const loadedAC = AhoCorasick.from(buf);
 const hits = loadedAC.match(text); // ['b', 'ba', 'nan']
 ```
