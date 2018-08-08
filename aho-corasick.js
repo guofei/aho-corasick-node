@@ -22,7 +22,7 @@ const calcBase = (da, index, children) => {
   }
   for (;;) {
     let used = false;
-    for (let i = 0; i < children.length; i++) {
+    for (let i = 0; i < children.length; i += 1) {
       const nextState = base + children[i].code;
       if (da.check[nextState]) {
         used = true;
@@ -70,18 +70,22 @@ const buildDoubleArray = (rootIndex, baseTrie, doubleArray) => {
     const { state, index } = stack.pop();
     state.index = index;
     if (state.code) {
+      // eslint-disable-next-line no-param-reassign
       doubleArray.codemap[index] = state.code;
     }
     if (!_.isEmpty(state.children)) {
       const v = calcBase(doubleArray, index, state.children);
       if (state.pattern) {
+        // eslint-disable-next-line no-param-reassign
         doubleArray.base[index] = -v;
       } else {
+        // eslint-disable-next-line no-param-reassign
         doubleArray.base[index] = v;
       }
       // set check
       _.forEach(state.children, (child) => {
         const nextState = v + child.code;
+        // eslint-disable-next-line no-param-reassign
         doubleArray.check[nextState] = index;
         stack.push({ state: child, index: nextState });
       });
