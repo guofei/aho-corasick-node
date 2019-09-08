@@ -188,8 +188,7 @@ const getOutputs = (ac, index) => {
 };
 
 const convert = (codes) => {
-  const arr = Int8Array.from(codes);
-  return bytebuffer.wrap(arr.buffer).toUTF8();
+  return bytebuffer.wrap(codes).toUTF8();
 };
 
 const search = (ac, text) => {
