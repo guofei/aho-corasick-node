@@ -160,14 +160,6 @@ const getNextIndexByFalure = (ac, currentIndex, code) => {
   return getNextIndexByFalure(ac, failure, code);
 };
 
-const getNextIndex = (ac, currentIndex, code) => {
-  const nextIndex = getBase(ac, currentIndex) + code;
-  if (nextIndex && ac.check[nextIndex] === currentIndex) {
-    return nextIndex;
-  }
-  return getNextIndexByFalure(ac, currentIndex, code);
-};
-
 const getPattern = (ac, index) => {
   if (index <= ROOT_INDEX) {
     return [];
@@ -187,25 +179,28 @@ const getOutputs = (ac, index) => {
   return [];
 };
 
-const convert = (codes) => {
-  return bytebuffer.wrap(codes).toUTF8();
-};
+const convert = codes => bytebuffer.wrap(codes).toUTF8();
 
 const search = (ac, text) => {
   const result = [];
   const codes = bytebuffer.fromUTF8(text).toBuffer();
-  let currentIndex = ROOT_INDEX;
+  let currentState = ROOT_INDEX;
+
   _.forEach(codes, (code) => {
-    const nextIndex = getNextIndex(ac, currentIndex, code);
-    if (ac.base[nextIndex] < 0 || !ac.base[nextIndex]) {
-      result.push(convert(getPattern(ac, nextIndex)));
+    let nextState = getBase(ac, currentState) + code;
+    if (!nextState || ac.check[nextState] !== currentState) {
+      nextState = getNextIndexByFalure(ac, currentState, code);
     }
-    const outputs = getOutputs(ac, nextIndex);
+    if (ac.base[nextState] < 0 || !ac.base[nextState]) {
+      result.push(convert(getPattern(ac, nextState)));
+    }
+    const outputs = getOutputs(ac, nextState);
     _.forEach(outputs, (output) => {
       result.push(convert(output));
     });
-    currentIndex = nextIndex;
+    currentState = nextState;
   });
+
   return _.uniq(result).sort();
 };
 
