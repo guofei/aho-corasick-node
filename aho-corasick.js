@@ -12,7 +12,6 @@ const initAC = () => ({
   check: [],
   failurelink: [],
   output: [],
-  codemap: [],
 });
 
 const calcBase = (da, index, children) => {
@@ -69,10 +68,6 @@ const buildDoubleArray = (rootIndex, baseTrie, doubleArray) => {
   while (!_.isEmpty(stack)) {
     const { state, index } = stack.pop();
     state.index = index;
-    if (state.code) {
-      // eslint-disable-next-line no-param-reassign
-      doubleArray.codemap[index] = state.code;
-    }
     if (!_.isEmpty(state.children)) {
       const v = calcBase(doubleArray, index, state.children);
       if (state.pattern) {
@@ -164,7 +159,7 @@ const getPattern = (ac, index) => {
   if (index <= ROOT_INDEX) {
     return [];
   }
-  const code = ac.codemap[index];
+  const code = index - getBase(ac, ac.check[index]);
   const parent = ac.check[index];
   const res = getPattern(ac, parent);
   res.push(code);
@@ -191,13 +186,16 @@ const search = (ac, text) => {
     if (!nextState || ac.check[nextState] !== currentState) {
       nextState = getNextIndexByFalure(ac, currentState, code);
     }
+
     if (ac.base[nextState] < 0 || !ac.base[nextState]) {
       result.push(convert(getPattern(ac, nextState)));
     }
-    const outputs = getOutputs(ac, nextState);
-    _.forEach(outputs, (output) => {
-      result.push(convert(output));
-    });
+    if (nextState !== ROOT_INDEX) {
+      const outputs = getOutputs(ac, nextState);
+      _.forEach(outputs, (output) => {
+        result.push(convert(output));
+      });
+    }
     currentState = nextState;
   });
 
@@ -227,7 +225,6 @@ const compactAC = ac => ({
   check: arrayToInt32Array(ac.check),
   failurelink: arrayToInt32Array(ac.failurelink),
   output: arrayToInt32Array(ac.output),
-  codemap: arrayToInt32Array(ac.codemap),
 });
 
 const exportAC = ac => ({
@@ -235,7 +232,6 @@ const exportAC = ac => ({
   check: int32ArrayToHex(ac.check),
   failurelink: int32ArrayToHex(ac.failurelink),
   output: int32ArrayToHex(ac.output),
-  codemap: int32ArrayToHex(ac.codemap),
 });
 
 const importAC = ({
@@ -243,13 +239,11 @@ const importAC = ({
   check,
   failurelink,
   output,
-  codemap,
 }) => ({
   base: hexToInt32Array(base),
   check: hexToInt32Array(check),
   failurelink: hexToInt32Array(failurelink),
   output: hexToInt32Array(output),
-  codemap: hexToInt32Array(codemap),
 });
 
 class Builder {
