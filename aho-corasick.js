@@ -43,9 +43,9 @@ const isRoot = baseTrie => !baseTrie.code;
 
 const buildBaseTrie = (sortedKeys) => {
   const root = { children: [] };
-  _.forEach(sortedKeys, (codes) => {
+  sortedKeys.forEach((codes) => {
     let current = root;
-    _.forEach(codes, (code, i) => {
+    codes.forEach((code, i) => {
       const found = searchChildren(current, code);
       if (found) {
         current = found;
@@ -80,7 +80,7 @@ const buildDoubleArray = (rootIndex, baseTrie, doubleArray) => {
         doubleArray.base[index] = v;
       }
       // set check
-      _.forEach(state.children, (child) => {
+      state.children.forEach((child) => {
         const nextState = v + child.code;
         // eslint-disable-next-line no-param-reassign
         doubleArray.check[nextState] = index;
@@ -105,7 +105,7 @@ const findFailureLink = (currentState, code) => {
 // BFS
 const buildAC = (baseTrie, ac) => {
   const queue = [];
-  _.forEach(baseTrie.children, (child) => {
+  baseTrie.children.forEach((child) => {
     child.failurelink = baseTrie;
     ac.failurelink[child.index] = baseTrie.index;
     queue.push(child);
@@ -114,7 +114,7 @@ const buildAC = (baseTrie, ac) => {
   while (i < queue.length) {
     const current = queue[i];
     i += 1;
-    _.forEach(current.children, (child) => {
+    current.children.forEach((child) => {
       // build failurelink
       const failurelink = findFailureLink(current, child.code);
       child.failurelink = failurelink;
@@ -183,7 +183,7 @@ const search = (ac, text) => {
   const codes = bytebuffer.fromUTF8(text).toBuffer();
   let currentState = ROOT_INDEX;
 
-  _.forEach(codes, (code) => {
+  codes.forEach((code) => {
     let nextState = getBase(ac, currentState) + code;
     if (!nextState || ac.check[nextState] !== currentState) {
       nextState = getNextIndexByFalure(ac, currentState, code);
@@ -194,7 +194,7 @@ const search = (ac, text) => {
     }
     if (nextState !== ROOT_INDEX) {
       const outputs = getOutputs(ac, nextState);
-      _.forEach(outputs, (output) => {
+      outputs.forEach((output) => {
         result.push(convert(output));
       });
     }
@@ -206,7 +206,7 @@ const search = (ac, text) => {
 
 const arrayToInt32Array = (arr) => {
   const int32Array = new Int32Array(arr.length);
-  _.forEach(arr, (v, i) => {
+  arr.forEach((v, i) => {
     int32Array[i] = v;
   });
   return int32Array;
