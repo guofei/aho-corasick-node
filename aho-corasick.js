@@ -15,9 +15,9 @@ const initAC = () => ({
 });
 
 const calcBase = (da, index, children) => {
-  let base = 1;
-  if (index - children[0].code > base) {
-    base = (index - children[0].code) + 1;
+  let base = (index + 1) - children[0].code;
+  if (base < 1) {
+    base = 1;
   }
   for (;;) {
     let used = false;
@@ -64,6 +64,8 @@ const buildBaseTrie = (sortedKeys) => {
 
 // DFS
 const buildDoubleArray = (rootIndex, baseTrie, doubleArray) => {
+  // eslint-disable-next-line no-param-reassign
+  doubleArray.base[1] = 1;
   const stack = [{ state: baseTrie, index: rootIndex }];
   while (!_.isEmpty(stack)) {
     const { state, index } = stack.pop();
@@ -256,7 +258,7 @@ class Builder {
   }
 
   build() {
-    const keys = this.words.map(k => bytebuffer.fromUTF8(k).toBuffer()).sort();
+    const keys = this.words.sort().map(k => bytebuffer.fromUTF8(k).toBuffer());
     const baseTrie = buildBaseTrie(keys);
     const ac = initAC();
     buildDoubleArray(ROOT_INDEX, baseTrie, ac);
