@@ -14,11 +14,13 @@ const initAC = () => ({
   output: [],
 });
 
-const calcBase = (da, index, children) => {
-  let base = (index + 1) - children[0].code;
+const calcBase = (da, start, children) => {
+  let base = Math.max(1, start) - children[0].code;
   if (base < 1) {
     base = 1;
   }
+  let end = start;
+  let numNotAvailable = 0;
   for (;;) {
     let used = false;
     for (let i = 0; i < children.length; i += 1) {
@@ -29,15 +31,40 @@ const calcBase = (da, index, children) => {
       }
     }
     if (used) {
+      if (da.check[end]) {
+        numNotAvailable += 1;
+      }
+      end += 1;
       base += 1;
     } else {
       break;
     }
   }
-  return base;
+  if (numNotAvailable / (end - start) > 0.95) {
+    return { base, nextCheck: end };
+  }
+  return { base, nextCheck: start };
 };
 
-const searchChildren = (state, code) => state.children.filter(s => s.code === code)[0];
+const sortedChildrenIndex = (children, code) => {
+  const index = _.sortedIndexBy(children, { code }, 'code');
+  if (index >= children.length) {
+    return -1;
+  }
+  const res = children[index];
+  if (res.code === code) {
+    return index;
+  }
+  return -1;
+};
+
+const searchChildren = (state, code) => {
+  const index = sortedChildrenIndex(state.children, code);
+  if (index === -1) {
+    return null;
+  }
+  return state.children[index];
+};
 
 const isRoot = baseTrie => !baseTrie.code;
 
@@ -67,21 +94,23 @@ const buildDoubleArray = (rootIndex, baseTrie, doubleArray) => {
   // eslint-disable-next-line no-param-reassign
   doubleArray.base[1] = 1;
   const stack = [{ state: baseTrie, index: rootIndex }];
+  let nextCheckIndex = 0;
   while (!_.isEmpty(stack)) {
     const { state, index } = stack.pop();
     state.index = index;
     if (!_.isEmpty(state.children)) {
-      const v = calcBase(doubleArray, index, state.children);
+      const { base, nextCheck } = calcBase(doubleArray, nextCheckIndex, state.children);
+      nextCheckIndex = nextCheck;
       if (state.pattern) {
         // eslint-disable-next-line no-param-reassign
-        doubleArray.base[index] = -v;
+        doubleArray.base[index] = -base;
       } else {
         // eslint-disable-next-line no-param-reassign
-        doubleArray.base[index] = v;
+        doubleArray.base[index] = base;
       }
       // set check
       state.children.forEach((child) => {
-        const nextState = v + child.code;
+        const nextState = base + child.code;
         // eslint-disable-next-line no-param-reassign
         doubleArray.check[nextState] = index;
         stack.push({ state: child, index: nextState });
@@ -92,7 +121,7 @@ const buildDoubleArray = (rootIndex, baseTrie, doubleArray) => {
 
 const findFailureLink = (currentState, code) => {
   const link = currentState.failurelink;
-  const index = _.findIndex(link.children, child => child.code === code);
+  const index = sortedChildrenIndex(link.children, code);
   if (index >= 0) {
     return link.children[index];
   }
