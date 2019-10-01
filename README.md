@@ -38,7 +38,6 @@ console.log(buf);
 //   check: 'string...',
 //   failurelink: 'string...',
 //   output: 'string...',
-//   codemap: 'string...',
 // };
 ```
 

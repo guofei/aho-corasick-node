@@ -15,12 +15,14 @@ const initAC = () => ({
 });
 
 const calcBase = (da, start, children) => {
-  let base = Math.max(1, start) - children[0].code;
+  let base = start - children[0].code;
   if (base < 1) {
     base = 1;
   }
   let end = start;
+  let next = start;
   let numNotAvailable = 0;
+  let gotoNext = true;
   for (;;) {
     let used = false;
     for (let i = 0; i < children.length; i += 1) {
@@ -33,6 +35,10 @@ const calcBase = (da, start, children) => {
     if (used) {
       if (da.check[end]) {
         numNotAvailable += 1;
+        gotoNext = false;
+      }
+      if (gotoNext) {
+        next += 1;
       }
       end += 1;
       base += 1;
@@ -43,7 +49,7 @@ const calcBase = (da, start, children) => {
   if (numNotAvailable / (end - start) > 0.95) {
     return { base, nextCheck: end };
   }
-  return { base, nextCheck: start };
+  return { base, nextCheck: next };
 };
 
 const sortedChildrenIndex = (children, code) => {
@@ -94,7 +100,7 @@ const buildDoubleArray = (rootIndex, baseTrie, doubleArray) => {
   // eslint-disable-next-line no-param-reassign
   doubleArray.base[1] = 1;
   const stack = [{ state: baseTrie, index: rootIndex }];
-  let nextCheckIndex = 0;
+  let nextCheckIndex = 1;
   while (!_.isEmpty(stack)) {
     const { state, index } = stack.pop();
     state.index = index;
