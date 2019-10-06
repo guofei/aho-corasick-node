@@ -1,6 +1,13 @@
 const assert = require('assert');
 const AhoCorasick = require('../aho-corasick');
 
+const getAc = (keywords) => {
+  const builder = AhoCorasick.builder();
+  keywords.forEach(k => builder.add(k));
+  const ac = builder.build();
+  return ac;
+};
+
 describe('AhoCorasick', () => {
   let ac = null;
   before(() => {
@@ -31,6 +38,24 @@ describe('AhoCorasick', () => {
     it('should match empty keywords', () => {
       const text = 'hello!';
       assert.deepEqual(ac.match(text), []);
+    });
+
+    it('should use suffix link', () => {
+      const text = 'soars';
+      const keywords = ['at', 'art', 'oars', 'soar'];
+      assert.deepEqual(getAc(keywords).match(text), ['oars', 'soar']);
+    });
+
+    it('should use jump suffix link', () => {
+      const text = 'soarsoars';
+      const keywords = ['at', 'art', 'oars', 'soar'];
+      assert.deepEqual(getAc(keywords).match(text), ['oars', 'soar']);
+    });
+
+    it('should use output', () => {
+      const text = 'sting';
+      const keywords = ['i', 'in', 'sting', 'tin'];
+      assert.deepEqual(getAc(keywords).match(text), keywords);
     });
   });
 });
