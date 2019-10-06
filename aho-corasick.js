@@ -1,5 +1,6 @@
 const bytebuffer = require('bytebuffer');
 const _ = require('lodash');
+const Allocation = require('./allocation');
 
 // doubleArray
 // base[current] + code = next
@@ -13,44 +14,6 @@ const initAC = () => ({
   failurelink: [],
   output: [],
 });
-
-const calcBase = (da, start, children) => {
-  let base = start - children[0].code;
-  if (base < 1) {
-    base = 1;
-  }
-  let end = start;
-  let next = start;
-  let numNotAvailable = 0;
-  let gotoNext = true;
-  for (;;) {
-    let used = false;
-    for (let i = 0; i < children.length; i += 1) {
-      const nextState = base + children[i].code;
-      if (da.check[nextState]) {
-        used = true;
-        break;
-      }
-    }
-    if (used) {
-      if (da.check[end]) {
-        numNotAvailable += 1;
-        gotoNext = false;
-      }
-      if (gotoNext) {
-        next += 1;
-      }
-      end += 1;
-      base += 1;
-    } else {
-      break;
-    }
-  }
-  if (numNotAvailable / (end - start) > 0.95) {
-    return { base, nextCheck: end };
-  }
-  return { base, nextCheck: next };
-};
 
 const sortedChildrenIndex = (children, code) => {
   const index = _.sortedIndexBy(children, { code }, 'code');
@@ -100,13 +63,12 @@ const buildDoubleArray = (rootIndex, baseTrie, doubleArray) => {
   // eslint-disable-next-line no-param-reassign
   doubleArray.base[1] = 1;
   const stack = [{ state: baseTrie, index: rootIndex }];
-  let nextCheckIndex = 1;
+  const allocation = new Allocation(doubleArray);
   while (!_.isEmpty(stack)) {
     const { state, index } = stack.pop();
     state.index = index;
     if (!_.isEmpty(state.children)) {
-      const { base, nextCheck } = calcBase(doubleArray, nextCheckIndex, state.children);
-      nextCheckIndex = nextCheck;
+      const base = allocation.getBase(state.children);
       if (state.pattern) {
         // eslint-disable-next-line no-param-reassign
         doubleArray.base[index] = -base;
