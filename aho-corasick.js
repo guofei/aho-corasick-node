@@ -1,6 +1,12 @@
-const bytebuffer = require('bytebuffer');
 const _ = require('lodash');
-const Allocation = require('./allocation');
+const Allocation = require('./lib/allocation');
+const {
+  codes2str,
+  str2codes,
+  arrayToInt32Array,
+  int32ArrayToHex,
+  hexToInt32Array,
+} = require('./lib/utils');
 
 // doubleArray
 // base[current] + code = next
@@ -103,7 +109,9 @@ const findFailureLink = (currentState, code) => {
 const buildAC = (baseTrie, ac) => {
   const queue = [];
   baseTrie.children.forEach((child) => {
+    // eslint-disable-next-line no-param-reassign
     child.failurelink = baseTrie;
+    // eslint-disable-next-line no-param-reassign
     ac.failurelink[child.index] = baseTrie.index;
     queue.push(child);
   });
@@ -114,17 +122,22 @@ const buildAC = (baseTrie, ac) => {
     current.children.forEach((child) => {
       // build failurelink
       const failurelink = findFailureLink(current, child.code);
+      // eslint-disable-next-line no-param-reassign
       child.failurelink = failurelink;
+      // eslint-disable-next-line no-param-reassign
       ac.failurelink[child.index] = failurelink.index;
       queue.push(child);
 
       // build output link
       if (failurelink.pattern) {
+        // eslint-disable-next-line no-param-reassign
         child.output = failurelink;
       } else {
+        // eslint-disable-next-line no-param-reassign
         child.output = failurelink.output;
       }
       if (child.output) {
+        // eslint-disable-next-line no-param-reassign
         ac.output[child.index] = child.output.index;
       }
     });
@@ -173,11 +186,9 @@ const getOutputs = (ac, index) => {
   return [];
 };
 
-const convert = codes => bytebuffer.wrap(codes).toUTF8();
-
 const search = (ac, text) => {
   const result = [];
-  const codes = bytebuffer.fromUTF8(text).toBuffer();
+  const codes = str2codes(text);
   let currentState = ROOT_INDEX;
 
   codes.forEach((code) => {
@@ -187,36 +198,18 @@ const search = (ac, text) => {
     }
 
     if (ac.base[nextState] < 0 || !ac.base[nextState]) {
-      result.push(convert(getPattern(ac, nextState)));
+      result.push(codes2str(getPattern(ac, nextState)));
     }
     if (nextState !== ROOT_INDEX) {
       const outputs = getOutputs(ac, nextState);
       outputs.forEach((output) => {
-        result.push(convert(output));
+        result.push(codes2str(output));
       });
     }
     currentState = nextState;
   });
 
   return _.uniq(result).sort();
-};
-
-const arrayToInt32Array = (arr) => {
-  const int32Array = new Int32Array(arr.length);
-  arr.forEach((v, i) => {
-    int32Array[i] = v;
-  });
-  return int32Array;
-};
-
-const int32ArrayToHex = (int32Array) => {
-  const b = bytebuffer.wrap(int32Array.buffer);
-  return b.toHex();
-};
-
-const hexToInt32Array = (hex) => {
-  const b = bytebuffer.fromHex(hex);
-  return new Int32Array(b.toArrayBuffer());
 };
 
 const compactAC = ac => ({
@@ -255,7 +248,7 @@ class Builder {
   }
 
   build() {
-    const keys = this.words.sort().map(k => bytebuffer.fromUTF8(k).toBuffer());
+    const keys = this.words.sort().map(k => str2codes(k));
     const baseTrie = buildBaseTrie(keys);
     const ac = initAC();
     buildDoubleArray(ROOT_INDEX, baseTrie, ac);
