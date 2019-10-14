@@ -238,6 +238,20 @@ const importAC = ({
   output: hexToInt32Array(output),
 });
 
+class AhoCorasick {
+  constructor(data) {
+    this.data = data;
+  }
+
+  match(text) {
+    return search(this.data, text);
+  }
+
+  export() {
+    return exportAC(this.data);
+  }
+}
+
 class Builder {
   constructor() {
     this.words = [];
@@ -257,28 +271,12 @@ class Builder {
   }
 }
 
-class AhoCorasick {
-  constructor(data) {
-    this.data = data;
-  }
+const from = (buffers) => {
+  const ac = new AhoCorasick();
+  ac.data = importAC(buffers);
+  return ac;
+};
 
-  match(text) {
-    return search(this.data, text);
-  }
+const builder = () => new Builder();
 
-  export() {
-    return exportAC(this.data);
-  }
-
-  static from(buffers) {
-    const ac = new AhoCorasick();
-    ac.data = importAC(buffers);
-    return ac;
-  }
-
-  static builder() {
-    return new Builder();
-  }
-}
-
-module.exports = AhoCorasick;
+module.exports = { from, builder };
