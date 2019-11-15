@@ -154,7 +154,7 @@ const getBase = (ac, index) => {
 
 const getNextIndexByFalure = (ac, currentIndex, code) => {
   let failure = ac.failurelink[currentIndex];
-  if (!failure || !getBase(ac, failure)) {
+  if (!failure) {
     failure = ROOT_INDEX;
   }
   const failureNext = getBase(ac, failure) + code;

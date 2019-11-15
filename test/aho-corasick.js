@@ -40,6 +40,12 @@ describe('AhoCorasick', () => {
       assert.deepEqual(ac.match(text), []);
     });
 
+    it('should match all keywords', () => {
+      const text = '0123456789';
+      const keywords = ['234', '23456', '3456', '67', '6789', '789', '8', '89'];
+      assert.deepEqual(getAc(keywords).match(text), keywords);
+    });
+
     it('should use suffix link', () => {
       const text = 'soars';
       const keywords = ['at', 'art', 'oars', 'soar'];
